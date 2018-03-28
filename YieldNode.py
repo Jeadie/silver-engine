@@ -77,6 +77,7 @@ class ForwardYieldLattice(object):
 		"""
 
 		# check if node exists at given time and index
+		print("i", i, "t", t)
 		if(t < 0 | (i < 0 | i > t)): 
 			return None
 		try:	
