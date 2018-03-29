@@ -1,60 +1,7 @@
 import math
+from src.YieldNode import YieldNode
 
-class YieldNode(object):
-
-    def __init__(self, time, p, y, prev_nodes = None, next_nodes = None):
-        """
-
-        :param time: Discrete time value for node from root
-        :param p: Decimal probability of shifting to upper next node.
-        :param y: Forward Yield rate at time increment
-        :param prev_nodes: tuple reference to previous two nodes
-        :param next_nodes: tuple reference to next two nodes
-        """
-        self.prev_up = None
-        self.prev_down = None
-        self.next_up = None
-        self.next_down = None
-        self.time = time
-        self._p = p
-        self.y = y
-        # temp price variable to calculate spot and forward rates
-        self._price = 1;
-
-        # If kwargs passed in check for validity and set, else None
-        if((prev_nodes is None) | (next_nodes is None)):
-            return
-
-        if(len(prev_nodes) ==2):
-            self.prev_up = prev_nodes[0]
-            self.prev_down = prev_nodes[1]
-        if(len(next_nodes) ==2):
-            self.next_up = next_nodes[0]
-            self.next_down = next_nodes[1]
-
-    @property
-    def price(self):
-        return self._price
-
-    @price.setter
-    def price(self, value):
-        if (value >= 0.0):
-            self._price = value
-
-    @property
-    def p(self):
-        return self._p
-
-    @p.setter
-    def p(self, value):
-        if (value >=0) & (value <=1):
-            self._p = value
-
-
-    def __str__(self):
-        return "[YieldNode: time={0}, yield={1}, prob={2}, price={3}]".format(self.time, self.y, self.p, self.price)
-
-class ForwardYieldLattice(object): 
+class ForwardYieldLattice(object):
 
     def __init__(self, periods, y0, yield_up_func = None, yield_down_func = None, prob_func = None):
         self.NodeLayers = [[] for i in range(periods)]
@@ -66,12 +13,12 @@ class ForwardYieldLattice(object):
 
 
         # Probability of yield going up at next time interval given time, yield and probability at being at given YieldNode
-        self.p = lambda t, y, p: 0.5 if (prob_func is None) else prob_func
+        self.p = (lambda t, y, p: 0.5) if (prob_func is None) else prob_func
 
         # yield of upper node at next time for a given node with time, yield and probability of going up
-        self.y_u = lambda t, y: y + 0.01 if (yield_up_func is None) else yield_up_func
+        self.y_u = (lambda t, y: y + 0.01) if (yield_up_func is None) else yield_up_func
         # yield of upper node at next time for a given node with time, yield and probability of going up
-        self.y_d = lambda t, y: y - 0.01 if (yield_down_func is None) else yield_down_func
+        self.y_d = (lambda t, y: y - 0.01) if (yield_down_func is None) else yield_down_func
         self.y0 = y0
         self.p0 = 0.5
         self.init_nodes()
@@ -142,7 +89,6 @@ class ForwardYieldLattice(object):
                     p = prev_node_up.p
                     node = YieldNode(time, self.p(time-1,y,p), self.y_d(time-1, y), [prev_node_up, prev_node_down], [None, None])
                 self.NodeLayers[time].append(node)
-
         # Connect lattice nodes to next time period
         for t in range(0, self.duration):
             for i in range(t+1):
@@ -157,12 +103,14 @@ class ForwardYieldLattice(object):
         self.rates[t2][t1] = y
 
     def get_spot_rate(self, t):
+        if(t==0):
+            return 0
         return self.rates[t][0] if (self.rates[t][0] is not None) else None
 
     def set_spot_rate(self, t, y):
         self.rates[t][0] = y
 
-    def get_forward_rate(self, t1, t2, y):
+    def get_forward_rate(self, t1, t2):
         return self.rates[t2][t1] if (self.rates[t2][t1] is not None) else None
 
     def get_node(self, t, i):
@@ -185,6 +133,6 @@ class ForwardYieldLattice(object):
         return "\n".join(layers)
 
 
-if __name__ == '__main__': 
+if __name__ == '__main__':
     a = ForwardYieldLattice(5, 0.7, 0.03, 0.01);
     print(a)
