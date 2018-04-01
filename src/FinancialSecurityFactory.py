@@ -1,4 +1,3 @@
 
-
 class FinancialSecurityFactory(object):
-
+    pass
